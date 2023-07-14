@@ -4,7 +4,6 @@
 using namespace std;
 
 typedef vector<vector<int>> Board;
-
 struct point {
     int x, y;
     point(int X = 0, int Y = 0) {
@@ -17,15 +16,14 @@ struct node {
     Board board;
     point blank;
     node* parent;
-    node* next;
-    node* children;
-    node(Board info, int x, int y, node* parent, node* next) {
+    node* children[4];
+    node(Board info, int x, int y, node* parent) {
             this->blank.x = x;
             this->blank.y = y;
             this->board = info;
-            this->next = next;
             this->parent = parent;
-            this->children = nullptr;
+            for (int i = 0; i < 4; i++)
+                this->children[i] = nullptr;
     }
 };
 
@@ -59,17 +57,17 @@ class SlidePuzzle {
         return x >= 0 && x < M && y >= 0 && y < M;
     }
     link generateChildren(link h) {
-        link children = nullptr;;
+        int i = 0;
         for (point d : dirs) {
             point next = {h->blank.x+d.x, h->blank.y+d.y};
             if (isSafe(next.x, next.y)) {
                 Board board = h->board;
                 swap(board[next.x][next.y], board[h->blank.x][h->blank.y]);
-                children = new node(board, next.x, next.y, h, children);
+                h->children[i++] = new node(board, next.x, next.y, h);
                 tryCount++;
             }
         }
-        return children;
+        return h;
     }
     point find(Board board, int x) {
         for (int i = 0; i < M; i++) {
@@ -92,6 +90,14 @@ class SlidePuzzle {
         }       
         return cost;
     }
+    void cleanUp(link h) {
+        if (h != nullptr) {
+            for (int i = 0; i < 4; i++)
+                if (h->children[i] != nullptr)
+                    cleanUp(h->children[i]);
+            delete h;
+        }
+    }
 public:
     SlidePuzzle() {
         M = 3;
@@ -109,10 +115,15 @@ public:
                 showSolution(curr);
                 break;
             }
-            curr->children = generateChildren(curr);
-            for (link t = curr->children; t != nullptr; t = t->next)
-                pq.push(make_pair(calculateBoardCost(t->board, goal), t));
+            curr = generateChildren(curr);
+            for (int i = 0; i < 4; i++) {
+                if (curr->children[i] != nullptr) {
+                   pq.push(make_pair(calculateBoardCost(curr->children[i]->board, goal), curr->children[i]));
+                }
+            }
+
         }
+        cleanUp(start);
     }
 };
 
@@ -129,6 +140,6 @@ int main() {
                    {7,6,5}
                     };
     SlidePuzzle ep;
-    ep.PFS(new node(start, 2,1,nullptr, nullptr), goal);
+    ep.PFS(new node(start, 2,1,nullptr), goal);
     return 0;
 }

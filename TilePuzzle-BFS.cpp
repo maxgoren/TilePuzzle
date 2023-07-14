@@ -2,7 +2,7 @@
 #include <vector>
 #include <queue>
 using namespace std;
-
+int ncg = 0;
 typedef vector<vector<int>> Board;
 
 struct point {
@@ -26,6 +26,10 @@ struct node {
             this->next = next;
             this->parent = parent;
             this->children = nullptr;
+    }
+    ~node() {
+        cout<<"adios from "<<ncg<<"\n";
+        ncg++;
     }
 };
 
@@ -78,6 +82,13 @@ class EightPuzzle {
                    return false;
         return true;
     }
+    void cleanup(link h) {
+        if (h != nullptr) {
+            cleanup(h->children);
+            cleanup(h->next);
+            delete h;
+        }
+    }
 public:
     EightPuzzle() {
 
@@ -91,12 +102,13 @@ public:
             if (compareBoards(h->board, goal)) {
                 cout<<"Solution Found!\n";
                 showSolution(h);
-                return;
+                break;
             }
             h->children = generateChildren(h);
             for (link t = h->children; t != nullptr; t = t->next)
                 fq.push(t);
         }
+        cleanup(start);
     }
 };
 
